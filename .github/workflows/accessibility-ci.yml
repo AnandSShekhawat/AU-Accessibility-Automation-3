@@ -42,6 +42,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           count=$(jq '.violations | length' a11y-report.json)
+          echo "Found $count accessibility violations"
           if [ "$count" -eq 0 ]; then
             echo "No accessibility issues found."
             exit 0
@@ -53,26 +54,19 @@ jobs:
             help=$(echo "$violation" | jq -r '.helpUrl')
             snippet=$(echo "$violation" | jq -r '.nodes[0].html' | sed 's/`/"/g')
 
-cat <<EOF > issue.md
-### Accessibility Issue: $rule
+            body="### Accessibility Issue: ${rule}\n\n"
+            body+="**Description:**\n${desc}\n\n"
+            body+="**Impacted HTML Example:**\n\`\`\`html\n${snippet}\n\`\`\`\n\n"
+            body+="🔗 WCAG Ref: ${help}\n"
+            body+="📌 Auto-generated — please fix and open a PR\n"
 
-**Description:**
-$desc
-
-**Impacted HTML Example:**
-\`\`\`html
-$snippet
-\`\`\`
-
-🔗 WCAG Ref: $help  
-📌 Auto-generated — please fix and open a PR
-EOF
+            printf "%b\n" "$body" > issue.md
 
             gh issue create \
-              --title "Fix: $rule accessibility violation" \
+              --title "Fix: ${rule} accessibility violation" \
               --body-file issue.md \
               --label "a11y-scan" \
-              --label "copilot:accessibility"
+              --label "copilot:accessibility" || echo "Failed to create issue for ${rule}"
           done
 
       - name: Upload full JSON report
