@@ -36,10 +36,10 @@ jobs:
           path: a11y-report.json
 
       - name: Create issues from accessibility violations
-        uses: github/issue-creation@v1
+        uses: peter-evans/create-issue-from-file@v4
         with:
-          file: a11y-report.json
-          label: |
+          title: Accessibility Violations Found
+          content-filepath: a11y-report.json
+          labels: |
             a11y-scan
             copilot:accessibility
-          fail-on-error: false
