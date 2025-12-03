@@ -5,18 +5,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  a11y-scan:
+  accessibility:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install axe-core/CLI server
+      - name: Install dependencies
         run: |
           npm install -g @axe-core/cli serve
 
@@ -27,19 +23,18 @@ jobs:
 
       - name: Run axe scan and save report
         run: |
-          axe http://localhost:3000/before.html --verbose --save a11y-report.json
+          axe http://localhost:3000/before.html \
+            --format json \
+            --save a11y-report.json
 
-      - name: Upload accessibility report artifact
-        uses: actions/upload-artifact@v4
+      - name: Create separate issues for axe violations
+        uses: insights-oss/axe-linter-action@v3
         with:
-          name: a11y-scan-report
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: a11y-report.json
-
-      - name: Create issues from accessibility violations
-        uses: peter-evans/create-issue-from-file@v4
-        with:
-          title: Accessibility Violations Found
-          content-filepath: a11y-report.json
+          include:
+            - wcag2a
+            - wcag2aa
           labels: |
             a11y-scan
             copilot:accessibility
