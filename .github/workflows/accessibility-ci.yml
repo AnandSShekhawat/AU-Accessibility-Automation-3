@@ -1,3 +1,54 @@
+# name: Automated Accessibility Scan
+
+# on:
+#   push:
+#   workflow_dispatch:
+
+# permissions:
+#   contents: write
+#   issues: write
+#   pull-requests: write
+
+# jobs:
+#   a11y-scan:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+
+#       - name: Install axe-core/CLI server
+#         run: |
+#           npm install -g @axe-core/cli serve
+
+#       - name: Serve site locally
+#         run: |
+#           serve . -l 3000 &
+#           sleep 5
+
+#       - name: Run axe scan and save report
+#         run: |
+#           axe http://localhost:3000/before.html --verbose --save a11y-report.json
+
+#       - name: Upload accessibility report artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: a11y-scan-report
+#           path: a11y-report.json
+
+#       - name: Create issues from accessibility violations
+#         uses: peter-evans/create-issue-from-file@v4
+#         with:
+#           title: Accessibility Violations Found
+#           content-filepath: a11y-report.json
+#           labels: |
+#             a11y-scan
+#             copilot:accessibility
+
 name: Automated Accessibility Scan
 
 on:
@@ -12,6 +63,7 @@ permissions:
 jobs:
   a11y-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,7 +73,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install axe-core/CLI server
+      - name: Install axe-core CLI and static server
         run: |
           npm install -g @axe-core/cli serve
 
@@ -30,21 +82,22 @@ jobs:
           serve . -l 3000 &
           sleep 5
 
-      - name: Run axe scan and save report
+      - name: Run axe scan and generate JSON report
         run: |
-          axe http://localhost:3000/before.html --verbose --save a11y-report.json
+          axe http://localhost:3000/before.html \
+            --format json \
+            --save a11y-report.json || true
 
-      - name: Upload accessibility report artifact
+      - name: Upload scan report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: a11y-scan-report
           path: a11y-report.json
 
-      - name: Create issues from accessibility violations
-        uses: peter-evans/create-issue-from-file@v4
+      - name: Create issues for each accessibility violation
+        uses: DequeSystems/axe-github-action@v2
         with:
-          title: Accessibility Violations Found
-          content-filepath: a11y-report.json
-          labels: |
-            a11y-scan
-            copilot:accessibility
+          axe-results-path: a11y-report.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: a11y-issue, automated-scan, copilot-accessibility
+          fail-on-error: false
