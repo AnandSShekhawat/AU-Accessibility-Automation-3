@@ -35,15 +35,14 @@ jobs:
         run: |
           echo "Running accessibility scan..."
           if ! axe http://localhost:3000/before.html \
-            --output a11y-report.json \
-            --output-format json; then
+            --save a11y-report.json; then
             echo "⚠️ Axe scan failed — creating fallback report"
             echo '{"violations": []}' > a11y-report.json
           fi
 
           echo "Scan completed"
+          cat a11y-report.json
           jq '.violations | length' a11y-report.json
-          ls -l a11y-report.json
 
       - name: Parse report and create individual issues
         env:
