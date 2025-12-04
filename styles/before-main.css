@@ -46,12 +46,12 @@ img#logo {
   margin: 1em 0 0;
 }
 /*
- * Uses color alone to communicate "link"
+ * Ensure links are distinguishable from surrounding text
  *
  */
 a {
   color: #555;
-	text-decoration: none;
+	text-decoration: underline;
 }
 
 /*
